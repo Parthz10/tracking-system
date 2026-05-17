@@ -1,0 +1,145 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+enum ReportType {
+  CRIME
+  MISSING_PERSON
+  SUSPICIOUS_ACTIVITY
+  TRAFFICKING
+  OTHER
+}
+
+enum ReportStatus {
+  RECEIVED
+  UNDER_REVIEW
+  ASSIGNED
+  IN_PROGRESS
+  RESOLVED
+  CLOSED
+}
+
+enum Priority {
+  LOW
+  NORMAL
+  HIGH
+  URGENT
+}
+
+enum MissingStatus {
+  ACTIVE
+  FOUND
+  CLOSED
+}
+
+enum OfficerRole {
+  OFFICER
+  SUPERVISOR
+  ADMIN
+}
+
+model AnonymousToken {
+  id             String          @id @default(cuid())
+  tokenHash      String          @unique
+  createdAt      DateTime        @default(now())
+  reports        Report[]
+  missingPersons MissingPerson[]
+}
+
+model Report {
+  id               String         @id @default(cuid())
+  type             ReportType
+  description      String
+  district         String?
+  municipality     String?
+  latitude         Decimal?       @db.Decimal(9, 6)
+  longitude        Decimal?       @db.Decimal(9, 6)
+  status           ReportStatus   @default(RECEIVED)
+  priority         Priority       @default(NORMAL)
+  anonymousTokenId String
+  anonymousToken   AnonymousToken @relation(fields: [anonymousTokenId], references: [id])
+  assignedToId     String?
+  assignedTo       Officer?       @relation("AssignedReports", fields: [assignedToId], references: [id])
+  media            Media[]
+  updates          StatusUpdate[]
+  createdAt        DateTime       @default(now())
+  updatedAt        DateTime       @updatedAt
+
+  @@index([status, type, priority])
+  @@index([district])
+}
+
+model Media {
+  id          String   @id @default(cuid())
+  reportId    String?
+  report      Report?  @relation(fields: [reportId], references: [id])
+  objectKey   String   @unique
+  mimeType    String
+  sizeBytes   Int
+  scanStatus  String
+  safe        Boolean  @default(false)
+  createdAt   DateTime @default(now())
+}
+
+model MissingPerson {
+  id               String         @id @default(cuid())
+  name             String
+  age              Int?
+  gender           String?
+  lastSeenLocation String
+  district         String?
+  photoObjectKey   String?
+  status           MissingStatus  @default(ACTIVE)
+  anonymousTokenId String
+  anonymousToken   AnonymousToken @relation(fields: [anonymousTokenId], references: [id])
+  createdAt        DateTime       @default(now())
+  updatedAt        DateTime       @updatedAt
+
+  @@index([status, district])
+}
+
+model Officer {
+  id           String        @id @default(cuid())
+  badgeNumber  String        @unique
+  passwordHash String
+  role         OfficerRole   @default(OFFICER)
+  active       Boolean       @default(true)
+  assigned     Report[]      @relation("AssignedReports")
+  updates      StatusUpdate[]
+  auditLogs    AuditLog[]
+  createdAt    DateTime      @default(now())
+  updatedAt    DateTime      @updatedAt
+}
+
+model StatusUpdate {
+  id        String       @id @default(cuid())
+  reportId  String
+  report    Report       @relation(fields: [reportId], references: [id])
+  status    ReportStatus
+  note      String?
+  officerId String?
+  officer   Officer?     @relation(fields: [officerId], references: [id])
+  createdAt DateTime     @default(now())
+
+  @@index([reportId, createdAt])
+}
+
+model AuditLog {
+  id        String   @id @default(cuid())
+  officerId String?
+  officer   Officer? @relation(fields: [officerId], references: [id])
+  action    String
+  entity    String
+  entityId  String?
+  ipHash    String?
+  metadata  Json?
+  createdAt DateTime @default(now())
+
+  @@index([createdAt])
+  @@index([officerId])
+}

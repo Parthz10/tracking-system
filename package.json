@@ -1,0 +1,30 @@
+{
+  "name": "nepal-police-safetyapp",
+  "private": true,
+  "version": "0.1.0",
+  "description": "Community Safety Tip and Missing Persons App for Lumbini Province Police Hackathon 2083.",
+  "workspaces": [
+    "backend",
+    "apps/dashboard",
+    "apps/citizen",
+    "apps/mobile"
+  ],
+  "scripts": {
+    "dev": "npm run dev -w backend",
+    "dev:backend": "npm run dev -w backend",
+    "dev:dashboard": "npm run dev -w apps/dashboard",
+    "dev:citizen": "npm run dev -w apps/citizen",
+    "dev:mobile": "npm run start -w apps/mobile",
+    "build": "npm run build -w backend && npm run build -w apps/dashboard",
+    "typecheck": "npm run typecheck -w backend && npm run typecheck -w apps/dashboard",
+    "lint": "npm run lint -w backend && npm run lint -w apps/dashboard"
+  },
+  "engines": {
+    "node": ">=20"
+  },
+  "overrides": {
+    "@xmldom/xmldom": "0.9.10",
+    "postcss": "8.5.14",
+    "tar": "7.5.15"
+  }
+}
